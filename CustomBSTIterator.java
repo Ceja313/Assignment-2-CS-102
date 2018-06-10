@@ -2,6 +2,7 @@ import java.util.LinkedList;
 
 public class CustomBSTIterator {
 
+    // Not needed
     CustomBST bst;
     CustomBSTNode currNode;
     LinkedList<CustomBSTNode> queue;
