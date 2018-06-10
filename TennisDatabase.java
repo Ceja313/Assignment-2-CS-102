@@ -1,6 +1,7 @@
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.Integer.parseInt;
 
@@ -12,8 +13,7 @@ import static java.lang.Integer.parseInt;
 class TennisDatabase {
 
     // Tennis containers to hold information
-    private CustomBST bst = new CustomBST();
-    //private TennisPlayersContainer tpc = new TennisPlayersContainer();
+    private TennisPlayersContainer tpc = new TennisPlayersContainer();
     private TennisMatchesContainer tmc = new TennisMatchesContainer();
 
     /**
@@ -26,7 +26,6 @@ class TennisDatabase {
      *      try to create a scanner to read information from the inputFile
      *          call to read the file and store data with the scanner as the argument
      *      catch an exception if the file path is incorrect and output that the file may not exist
-     *          rethrow exception
      * otherwise output that the tennis database has no arguments to read a file from
      * @param args The command line arguments
      */
@@ -43,14 +42,50 @@ class TennisDatabase {
             try (Scanner scanner = new Scanner(new File(inputFileName))) {
                 readFileStoreData(scanner);
             } catch (IOException ex) {
-                System.out.println("Error during reading, command line argument file may not exist.");
-                throw new NullPointerException("Error during reading or writing, command line "
-                        + "argument file may not exist. " + args[0]);
+                Logger.getLogger( Assignment2.class.getName() ).log( Level.SEVERE,
+                        "Error during reading, command line argument file may not exist." + args[0], ex );
             }
 
 
         } else {
             System.out.println("Sorry, TennisDatabase has no argument file to read from ");
+        }
+    }
+
+    /**
+     * Method used to export the information stored inside the database to an external file.
+     *
+     * Uses an iterator to output the players.
+     * Uses a loop to output the matches.
+     * @param args
+     */
+    void exportToFile(String [] args) {
+        TreeIterator saveIter1 =
+                new TreeIterator( tpc ); // Init the iterator.
+        saveIter1.setInorder();
+        try { // Open file for writing.
+            PrintWriter writer = new PrintWriter( args[0], "UTF-8" );
+            TennisPlayer player;
+            TennisPlayerNode currItem;
+            while( saveIter1.hasNext() ) { // Binary search tree traversal using iterator.
+                currItem = saveIter1.next();
+                player = currItem.getPlayer();
+                //PLAYER/DJA80/Chris/Paul/1987/Ireland
+                writer.println(
+                        "PLAYER/" + player.getId() + "/" + player.getFirstName()
+                                + "/" + player.getLastName() + "/" + player.getBirthYear()
+                                + "/" + (player.getCountry().isEmpty() ? " " : player.getCountry()) + "/");
+            }
+            for(TennisMatch match : getTmc().getMatches()) {
+                writer.println("MATCH/" + match.getPlayer1Id() + "/" + match.getPlayer2Id()
+                        + "/" + match.getTennisMatchDate() + "/" + match.getTournament() + "/" + match.getScore());
+            }
+            writer.close(); } // Close file.
+        catch( FileNotFoundException e ) {
+            System.out.println("File not found " + e);
+        }
+        catch( UnsupportedEncodingException e ) {
+            System.out.println("Unsupported Encoding " + e);
         }
     }
 
@@ -70,7 +105,7 @@ class TennisDatabase {
         while (scanner.hasNextLine()) {
             line = scanner.nextLine();
             importedFileInformation = importedFileInformation + " " + line;
-            recordInformation = scanner.nextLine().split("/");
+            recordInformation = line.split("/");
 
             if (recordInformation.length > 0) {
                 createObjectsFromGivenInput(recordInformation);
@@ -114,7 +149,7 @@ class TennisDatabase {
                 final TennisPlayer player = new TennisPlayer(playerInformation[1], playerInformation[2]
                         , playerInformation[3], parseInt(playerInformation[4]), playerInformation[5]);
                 final TennisPlayerNode playerNode = new TennisPlayerNode(player);
-                bst.insert(player.getId(), playerNode);
+                tpc.insertPlayer(playerNode);
                 //tpc.insertPlayer(player);
             } else {
                 throw new TennisDatabaseException("Do not have sufficient information for a TennisPlayer");
@@ -134,7 +169,7 @@ class TennisDatabase {
      */
     void userCreatePlayer(TennisPlayer player) {
         final TennisPlayerNode playerNode = new TennisPlayerNode(player);
-        bst.insertPlayer(playerNode);
+        tpc.insertPlayer(playerNode);
         //tpc.insertPlayer(player);
     }
 
@@ -152,7 +187,7 @@ class TennisDatabase {
         try {
             if (matchInformation.length == 6) {
                 final TennisMatch match = new TennisMatch(matchInformation[1], matchInformation[2]
-                        , matchInformation[3], matchInformation[4], matchInformation[5]);
+                        , matchInformation[3], matchInformation[4], matchInformation[5], tpc);
                 tpc.insertMatch(match);
                 tmc.insertMatch(match);
             } else {
@@ -177,10 +212,23 @@ class TennisDatabase {
     }
 
     /**
+     * Method used to call for the binary search tree
+     * @return the Binary Search Tree
+     */
+    TennisPlayersContainer getBST() {
+        return this.tpc;
+    }
+
+    /**
+     * Method used to call for the tennis matches container of the database.
+     * @return the tennisMatchesContainer
+     */
+    TennisMatchesContainer getTmc() {return this.tmc;}
+    /**
      * Method used to call for the tennis player container to print all the players.
      */
     void printAllTennisPlayers() {
-        tpc.printAllPlayers();
+        tpc.printInorder();
     }
 
     /**
@@ -197,6 +245,14 @@ class TennisDatabase {
     void printAllMatches() {
         tmc.printAllMatches();
     }
+
+
+    /**
+     * Method used to remove a player with a given key
+     * @param key id of player
+     * @return true/false depending on if the player was deleted
+     */
+    boolean removePlayer(String key) { return tpc.deleteKey(key); }
 
     /**
      * Method used to delete all tennis players and tennis matches

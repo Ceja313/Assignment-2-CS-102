@@ -3,6 +3,8 @@
  * @author Jeffery Ceja
  */
 public class TennisMatchesList implements TennisMatchesListInterface {
+
+    // Values stored by the list
     private TennisMatchNode head;
     private TennisMatchNode tail ;
     private int size;

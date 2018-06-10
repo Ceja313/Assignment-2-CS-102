@@ -1,20 +1,18 @@
+import static java.lang.Integer.parseInt;
+
 /**
  * The Class TennisPlayer, used as a holder for the winner of a tennis match.
  * @author Jeffery Ceja
  */
-public class TennisPlayer implements TennisPlayerInterface{
+ public class TennisPlayer implements TennisPlayerInterface{
 
+     // Values stored for a tennis player
     private String Id;
-
     private String firstName;
-
     private String lastName;
-
     private String country;
-
     private boolean dummy;
-
-    private int year;
+    private int birthYear;
 
     /**
      * Constructor to create a tennis player with the information in the arguments.
@@ -54,7 +52,7 @@ public class TennisPlayer implements TennisPlayerInterface{
      * @param year the year of the tennis player
      */
     void setBirthYear(int year) {
-        this.year = year;
+        this.birthYear = year;
     }
 
     /**
@@ -86,8 +84,10 @@ public class TennisPlayer implements TennisPlayerInterface{
     }
 
     public int getBirthYear() {
-        return this.year;
+        return this.birthYear;
     }
+
+    public String getStringBirthYear() { return Integer.toString(this.birthYear);}
 
     public String getCountry() {
         return this.country;
@@ -103,10 +103,18 @@ public class TennisPlayer implements TennisPlayerInterface{
         System.out.println("Country: " + getCountry());
     }
 
+    /**
+     * Method to return if the tennis player is a dummy.
+     * @return The dummy value stored of the tennis player
+     */
     boolean isDummy() {
         return dummy;
     }
 
+    /**
+     * Method used to set the dummy value of the tennis player.
+     * @param dummy true/false value to save to the tennis player
+     */
     void setDummy(boolean dummy) {
         this.dummy = dummy;
     }

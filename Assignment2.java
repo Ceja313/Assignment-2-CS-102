@@ -1,330 +1,637 @@
-import java.text.SimpleDateFormat;
-import java.util.Scanner;
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static java.lang.Integer.parseInt;
 
 /**
- * The Class Assignment1, used to act as a User Interface and handle the information from the user accordingly.
+ * The Class Assignment2, used to launch an application and handle the information from the user accordingly.
  * @author Jeffery Ceja
  */
-public class Assignment2 {
+public class Assignment2 extends Application {
+
+    // Colors used for button color changes
+    private static final Color black = Color.web("#000000"); // ...
+    private static final Color white = Color.web("#ffffff"); // ...
+    private static final BlendMode green = BlendMode.GREEN;
+
+    // Table Instantiations
+    private final TableView<TennisMatch> table = new TableView<>(); // ...
+    private final TableView<TennisPlayer> table2 = new TableView<>();
+
+    // Allow the data to be read as observable array lists
+    private final ObservableList<TennisMatch> data = FXCollections.observableArrayList();
+    private final ObservableList<TennisPlayer> data2 = FXCollections.observableArrayList();
+
+    //button sections and file chooser
+    private final HBox addMatchSection = new HBox(); // ...
+    private final HBox addPlayerSection = new HBox();
+    private final HBox deletePlayerSection = new HBox();
+    private final FileChooser fileChooser = new FileChooser();
+
+    // Labels
+    private final Label myName = new Label("Jeffery Ceja");
+    private final Label matchesLabel = new Label("TennisMatches");
+    private final Label playersLabel = new Label("TennisPlayers");
+
+    private final VBox vbox = new VBox();
+
+    // Buttons
+    private final Button clearDatabase = new Button("Clear Database");
+    private final Button changeToMatchesButton = new Button("Change to Matches");
+    private final Button changeToPlayersButton = new Button("Change To Players");
+    private final Button importButton = new Button("Select a file to import from.");
+    private final Button exportButton = new Button("Select a file to export to.");
+    private final Button deletePlayerButton = new Button("Delete Player");
+    private final Button addPlayerButton = new Button("AddPlayer");
+    private final Button addMatchButton = new Button("AddMatch");
+
+    // Player column information
+    private TableColumn<TennisPlayer, String> playerIdCol = new TableColumn<>("Player ID");
+    private TableColumn<TennisPlayer, String> firstNameCol = new TableColumn<>("First Name");
+    private TableColumn<TennisPlayer, String> lastNameCol = new TableColumn<>("Last Name");
+    private TableColumn<TennisPlayer, String> birthYearCol = new TableColumn<>("Birth Year");
+    private TableColumn<TennisPlayer, String> countryCol = new TableColumn<>("Country");
+
+    // Add Player Text Fields
+    private final TextField addPlayerID = new TextField();
+    private final TextField addFirstName = new TextField();
+    private final TextField addLastName = new TextField();
+    private final TextField addYear = new TextField();
+    private final TextField addCountry = new TextField();
+
+    // Match column information
+    private TableColumn<TennisMatch, String> firstIdCol = new TableColumn<>("Player 1 Name");
+    private TableColumn<TennisMatch, String> secondIdCol = new TableColumn<>("Player 2 Name");
+    private TableColumn<TennisMatch, String> matchDateCol = new TableColumn<>("Date");
+    private TableColumn<TennisMatch, String> matchLocationCol = new TableColumn<>("Location");
+    private TableColumn<TennisMatch, String> matchScoreCol = new TableColumn<>("Winner");
+
+    // Add Match Text Fields
+    private final TextField addFirstID = new TextField();
+    private final TextField addSecondId = new TextField();
+    private final TextField addTennisMatchDate = new TextField();
+    private final TextField addMatchLocation = new TextField();
+    private final TextField addMatchScore = new TextField();
+
+    // Remove Player Text Fields
+    private final TextField idToDelete = new TextField();
+
+    private TennisDatabase database = new TennisDatabase();
+    private Scene scene = new Scene(new Group());
+
     /**
-     * Main method.
-     *
-     * Create an instance of Assignment1
-     * Create an instance of TennisDatabase
-     * call for the database to load information from a given filename from the args
-     * call for the assignment to display the user options
-     *
-     * @param args arguments from the JCL
+     * Main method used to launch the application
+     * @param args command line arguments
      */
     public static void main(String[] args) {
-        Assignment2 assignment = new Assignment2();
-        TennisDatabase database = new TennisDatabase();
-        database.loadFromFile(args);
-        assignment.displayUserOptions(database);
-
-
+        launch(args);
     }
 
     /**
-     * Method used as the user interface and call the correct methods to do the requests of the user.
-     * do a loop that iterates at least once and continues until 8 is inputted
-     *      Output interface to show available options of the user
-     *      based on user input
-     *          print all tennis players
-     *          print all tennis matches of a player
-     *          print all tennis matches
-     *          insert a new player
-     *              ask for player information and continue to ask if the information is not valid
-     *          insert a new match
-     *              ask for match information and continue to ask if the information is not valid
-     *          exit the program
-     *          if the user selection is invalid say it is invalid and go back to the start of the loop
+     * Method used to launch the GUI of the program.
      *
-     * @param database The TennisDatabase holding information of matches and players
+     * Alters the stage, tables, and calls for the setup of the table, buttons, stage, box and scene to be
+     * displayed to the stage.
+     * @param stage Screen launched when program is started
      */
-    private void displayUserOptions(TennisDatabase database) {
-        System.out.println("Welcome to the CS-102 Tennis Manager, my name is Jeff Ceja");
-        int selection;
-        Scanner userInput = new Scanner(System.in);
-        do {
-            System.out.println(); System.out.println();
-            System.out.println("Available Commands:");
-            System.out.println("1 -- Print all tennis players.");
-            System.out.println("2 -- Print all tennis matches of a player.");
-            System.out.println("3 -- Print all tennis matches.");
-            System.out.println("4 -- Insert a new player.");
-            System.out.println("5 -- Insert a new match.");
-            System.out.println("8 -- Exit.");
-            System.out.print("Enter your selection : ");
-            selection = userInput.nextInt();
+    @Override
+    public void start(Stage stage) {
+        String[] args = new String[10];
 
-            switch (selection) {
-                case 1:
-                    printAllTennisPlayers(database);
-                    break;
-                case 2:
-                    printAllTennisMatchesOfAPlayer(userInput, database);
-                    break;
-                case 3:
-                    printAllTennisMatches(database);
-                    break;
-                case 4:
-                    boolean isValidPlayer;
-                    String [] playerInfo;
-                    do {
-                        System.out.println("What is the Id, firstName, lastName, year, and country of the player? ");
-                        System.out.println("For example a response could be: JC313,Jeffery,Ceja,2012,America");
-                        String playerInformation = userInput.next();
-                        playerInfo = playerInformation.split(",");
-                        isValidPlayer = isValidPlayer(playerInfo);
-                    } while (!isValidPlayer);
+        setMyNameInfo();
+        setMatchesLabelInfo();
+        setPlayersLabelInfo();
 
-                    TennisPlayer player = new TennisPlayer(playerInfo[0], playerInfo[1], playerInfo[2],
-                            parseInt(playerInfo[3]), playerInfo[4]);
-                    insertNewPlayer(database, player);
-                    break;
-                case 5:
-                    boolean isValidMatch;
-                    String [] matchInfo;
-                    do {
-                        System.out.println("What is the firstPlayerId, secondPlayerId, date, location, and scores " +
-                                "of the match?");
-                        System.out.println("Response must be in format: FED81/DJO87/20150817/CINCINNATI/7-6,6-4/");
-                        String matchInformation = userInput.next();
-                        matchInfo = matchInformation.split("/");
-                        isValidMatch = isValidMatch(matchInfo);
-                    } while (!isValidMatch);
-                    try {
-                        TennisMatch match = new TennisMatch(matchInfo[0], matchInfo[1], matchInfo[2], matchInfo[3],
-                                matchInfo[4]);
-                        insertNewMatch(database, match);
-                    } catch (TennisDatabaseException ex) {
-                        System.out.println("Unable to insert tennisMatch, invalid input.");
-                        System.out.println("Information supplied:");
-                        for(int index = 0; index < matchInfo.length; index++) {
-                            System.out.println(matchInfo[index]);
-                        }
+        table.setEditable(false);
+        table2.setEditable(false);
+
+        setPlayerColumnInfo();
+        setPlayerTextFieldsInfo();
+
+        setMatchesColumnInfo();
+        setMatchTextFieldInfo();
+
+        table.getColumns().addAll(firstIdCol, secondIdCol, matchDateCol, matchLocationCol, matchScoreCol);
+
+        setClearDatabaseButtonInfo();
+        setChangeToMatchesButtonInfo();
+        setChangeToPlayerButtonInfo();
+        setImportButtonInfo(stage, args);
+        setExportButtonInfo(stage, args);
+        setDeletePlayerButtonInfo();
+        setAddPlayerButtonInfo();
+        setAddMatchButtonInfo();
+
+        table.setMinWidth(550);
+        table2.setMinWidth(550);
+        addMatchSection.getChildren().addAll(addFirstID, addSecondId,
+                addTennisMatchDate, addMatchLocation, addMatchScore, addMatchButton);
+        addMatchSection.setSpacing(3);
+        addMatchSection.setAlignment(Pos.CENTER);
+        addPlayerSection.getChildren().addAll(addPlayerID, addFirstName,
+                addLastName, addYear, addCountry, addPlayerButton);
+        addPlayerSection.setSpacing(3);
+        addPlayerSection.setAlignment(Pos.CENTER);
+        deletePlayerSection.getChildren().addAll(idToDelete, deletePlayerButton);
+        deletePlayerSection.setSpacing(3);
+        deletePlayerSection.setAlignment(Pos.CENTER_RIGHT);
+        vbox.setPadding(new Insets(10, 0, 0, 10));
+        vbox.setSpacing(5);
+        vbox.setAlignment(Pos.CENTER);
+
+        vbox.getChildren().addAll(clearDatabase, changeToPlayersButton,
+                importButton, exportButton, matchesLabel, myName, table, addMatchSection);
+        setSceneInfo();
+
+        stage.setTitle("CS 102 Assignment 2");
+        stage.setHeight(700);
+        stage.setWidth(650);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    /**
+     * Method used to set the effects on my name display.
+     */
+    private void setMyNameInfo() {
+        myName.setFont(new Font("Arial", 20));
+        myName.setTextFill(white);
+        myName.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    myName.setTextFill(Color.BLUE);
+                }
+        );
+        myName.setOnMouseExited(
+                (MouseEvent e) -> {
+                    myName.setTextFill(white);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects for leaving the application screen with the mouse.
+     */
+    private void setSceneInfo() {
+        scene.setFill(black);
+        ((Group) scene.getRoot()).getChildren().addAll(vbox);
+        (scene.getRoot()).setBlendMode(BlendMode.LIGHTEN);
+        (scene.getRoot()).setOnMouseEntered(
+                (MouseEvent e) -> {
+                    scene.setFill(black);
+                }
+        );
+        (scene.getRoot()).setOnMouseExited(
+                (MouseEvent e) -> {
+                    scene.setFill(white);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects on the match label display.
+     */
+    private void setMatchesLabelInfo() {
+        matchesLabel.setFont(new Font("Arial", 20));
+        matchesLabel.setTextFill(white);
+        matchesLabel.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    matchesLabel.setTextFill(Color.AQUAMARINE);
+                }
+        );
+        matchesLabel.setOnMouseExited(
+                (MouseEvent e) -> {
+                    matchesLabel.setTextFill(white);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects on the players label display.
+     */
+    private void setPlayersLabelInfo() {
+        playersLabel.setFont(new Font("Arial", 20));
+        playersLabel.setTextFill(white);
+        playersLabel.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    playersLabel.setTextFill(Color.HOTPINK);
+                }
+        );
+        playersLabel.setOnMouseExited(
+                (MouseEvent e) -> {
+                    playersLabel.setTextFill(white);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the column information for TennisPlayers
+     */
+    private void setPlayerColumnInfo() {
+        playerIdCol.setMinWidth(playerIdCol.getPrefWidth());
+        playerIdCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        playerIdCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        firstNameCol.setMinWidth(firstNameCol.getPrefWidth());
+        firstNameCol.setCellValueFactory(new PropertyValueFactory<>("firstName"));
+        firstNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        lastNameCol.setMinWidth(lastNameCol.getPrefWidth());
+        lastNameCol.setCellValueFactory(new PropertyValueFactory<>("LastName"));
+        lastNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        birthYearCol.setMinWidth(100);
+        birthYearCol.setCellValueFactory(new PropertyValueFactory<>("StringBirthYear"));
+        birthYearCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        countryCol.setMinWidth(200);
+        countryCol.setCellValueFactory(new PropertyValueFactory<>("Country"));
+        countryCol.setCellFactory(TextFieldTableCell.forTableColumn());
+    }
+
+    /**
+     * Method used to set the text shown inside the text box's of the add player button.
+     */
+    private void setPlayerTextFieldsInfo() {
+        idToDelete.setPromptText("ID to Delete");
+        idToDelete.setMaxWidth(100);
+        idToDelete.setAlignment(Pos.CENTER);
+
+        addPlayerID.setPromptText("Player ID");
+        addPlayerID.setMaxWidth(100);
+        addPlayerID.setAlignment(Pos.CENTER);
+
+        addFirstName.setPromptText("First Name");
+        addFirstName.setMaxWidth(100);
+        addFirstName.setAlignment(Pos.CENTER);
+
+        addLastName.setPromptText("Last Name");
+        addLastName.setMaxWidth(100);
+        addLastName.setAlignment(Pos.CENTER);
+
+        addYear.setPromptText("Year");
+        addYear.setMaxWidth(100);
+        addYear.setAlignment(Pos.CENTER);
+
+        addCountry.setPromptText("Country");
+        addCountry.setMaxWidth(100);
+        addCountry.setAlignment(Pos.CENTER);
+    }
+
+    /**
+     * Method used to set the column information for the add Match button.
+     */
+    private void setMatchesColumnInfo() {
+
+        firstIdCol.setMinWidth(120);
+        firstIdCol.setCellValueFactory(new PropertyValueFactory<>("Player1Name"));
+        firstIdCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        secondIdCol.setMinWidth(120);
+        secondIdCol.setCellValueFactory(new PropertyValueFactory<>("Player2Name"));
+        secondIdCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        matchDateCol.setMinWidth(100);
+        matchDateCol.setCellValueFactory(new PropertyValueFactory<>("TennisMatchDate"));
+        matchDateCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        matchLocationCol.setMinWidth(150);
+        matchLocationCol.setCellValueFactory(new PropertyValueFactory<>("Tournament"));
+        matchLocationCol.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        matchScoreCol.setMinWidth(100);
+        matchScoreCol.setCellValueFactory(new PropertyValueFactory<>("winner"));
+        matchScoreCol.setCellFactory(TextFieldTableCell.forTableColumn());
+    }
+
+    /**
+     * Method used to set the text shown inside the text box's of the add match button.
+     */
+    private void setMatchTextFieldInfo() {
+        addFirstID.setPromptText("Player 1 ID");
+        addFirstID.setMaxWidth(100);
+        addFirstID.setAlignment(Pos.CENTER);
+
+        addSecondId.setMaxWidth(100);
+        addSecondId.setPromptText("Player 2 ID");
+        addSecondId.setAlignment(Pos.CENTER);
+
+        addTennisMatchDate.setMaxWidth(100);
+        addTennisMatchDate.setPromptText("Date");
+        addTennisMatchDate.setAlignment(Pos.CENTER);
+
+        addMatchLocation.setMaxWidth(100);
+        addMatchLocation.setPromptText("Location");
+        addMatchLocation.setAlignment(Pos.CENTER);
+
+        addMatchScore.setMaxWidth(100);
+        addMatchScore.setPromptText("Scores");
+        addMatchScore.setAlignment(Pos.CENTER);
+    }
+
+    /**
+     * Method used to set the effects for the clear database button and the actions for when the button is pressed.
+     */
+    private void setClearDatabaseButtonInfo() {
+        clearDatabase.setTextFill(black);
+        clearDatabase.setBlendMode(BlendMode.LIGHTEN);
+        clearDatabase.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    clearDatabase.setBlendMode(green);
+                }
+        );
+        clearDatabase.setOnMouseExited(
+                (MouseEvent e) -> {
+                    clearDatabase.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+
+        clearDatabase.setOnAction(
+                (ActionEvent e) -> {
+                    database.reset();
+                    data.setAll(database.getTmc().getMatches());
+                    table.setItems(data);
+                    data2.setAll(database.getBST().getPlayersArray());
+                    table2.setItems(data2);
+                    vbox.getChildren().clear();
+                    vbox.getChildren().addAll(clearDatabase, changeToPlayersButton,
+                            importButton, exportButton, matchesLabel, myName, table, addMatchSection);
+                    ((Group) scene.getRoot()).getChildren().clear();
+                    ((Group) scene.getRoot()).getChildren().addAll(vbox);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects for the change to matches button and the actions for when the button is pressed.
+     */
+    private void setChangeToMatchesButtonInfo() {
+        changeToMatchesButton.setTextFill(black);
+        changeToMatchesButton.setBlendMode(BlendMode.LIGHTEN);
+        changeToMatchesButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    changeToMatchesButton.setBlendMode(green);
+                }
+        );
+        changeToMatchesButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    changeToMatchesButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        changeToMatchesButton.setOnAction(
+                (ActionEvent e) -> {
+                    data.setAll(database.getTmc().getMatches());
+                    table.setItems(data);
+                    vbox.getChildren().clear();
+                    vbox.getChildren().addAll(clearDatabase, changeToPlayersButton,
+                            importButton, exportButton, matchesLabel, myName, table, addMatchSection);
+                    ((Group) scene.getRoot()).getChildren().clear();
+                    ((Group) scene.getRoot()).getChildren().addAll(vbox);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects for the change to players button and the actions for when the button is pressed.
+     */
+    private void setChangeToPlayerButtonInfo() {
+        changeToPlayersButton.setTextFill(black);
+        changeToPlayersButton.setBlendMode(BlendMode.LIGHTEN);
+        changeToPlayersButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    changeToPlayersButton.setBlendMode(green);
+                }
+        );
+        changeToPlayersButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    changeToPlayersButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        changeToPlayersButton.setOnAction(
+                (ActionEvent e) -> {
+                    database.getBST().getPlayersArray().clear();
+                    database.getBST().putInArrayList();
+                    database.getTmc().goOverMatches(database.getBST());
+                    data2.setAll(database.getBST().getPlayersArray());
+                    table2.setItems(data2);
+                    table2.getColumns().clear();
+                    table2.getColumns().addAll(playerIdCol, firstNameCol, lastNameCol, birthYearCol, countryCol);
+                    vbox.getChildren().clear();
+                    vbox.getChildren().addAll(clearDatabase, changeToMatchesButton,
+                            importButton, exportButton, playersLabel, myName, table2,
+                            addPlayerSection, deletePlayerSection);
+                    ((Group) scene.getRoot()).getChildren().clear();
+                    ((Group) scene.getRoot()).getChildren().addAll(vbox);
+                }
+        );
+    }
+
+    /**
+     * Method used to set the effects for the import button and the actions for when the button is pressed.
+     */
+    private void setImportButtonInfo(Stage stage, String[] args) {
+        importButton.setTextFill(black);
+        importButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    importButton.setBlendMode(green);
+                }
+        );
+        importButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    importButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        importButton.setOnAction(
+                (final ActionEvent e) -> {
+                    configureFileChooser(fileChooser);
+                    File file = fileChooser.showOpenDialog(stage);
+                    if (file != null && !file.getAbsolutePath().isEmpty()) {
+                        args[0] = file.getAbsolutePath();
+                        database.loadFromFile(args);
+                        database.getBST().getPlayersArray().clear();
+                        database.getBST().putInArrayList();
+                        database.getTmc().goOverMatches(database.getBST());
+                        data2.setAll(database.getBST().getPlayersArray());
+                        table2.setItems(data2);
+                        table2.getColumns().clear();
+                        table2.getColumns().addAll(playerIdCol, firstNameCol,
+                                lastNameCol, birthYearCol, countryCol);
+                        data.setAll(database.getTmc().getMatches());
+                        table.setItems(data);
+
+                        vbox.getChildren().clear();
+                        vbox.getChildren().addAll(clearDatabase, changeToPlayersButton,
+                                importButton, exportButton, matchesLabel, myName, table, addMatchSection);
+                        ((Group) scene.getRoot()).getChildren().clear();
+                        ((Group) scene.getRoot()).getChildren().addAll(vbox);
                     }
-                    break;
-                case 8:
-                    System.out.print("I hope you had fun!");
-                    break;
-                default:
-                    System.out.println("Input is not a valid option.");
-            }
-
-        } while (selection != 8);
-
+                }
+        );
     }
 
     /**
-     * Call the database to print all tennisPlayers
-     * @param database The TennisDatabase holding information of matches and players
+     * Method used to set the effects for the export button and the actions for when the button is pressed.
      */
-    private void printAllTennisPlayers(TennisDatabase database) {
-        database.printAllTennisPlayers();
+    private void setExportButtonInfo(Stage stage, String[] args) {
+        exportButton.setTextFill(black);
+        exportButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    exportButton.setBlendMode(green);
+                }
+        );
+        exportButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    exportButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        exportButton.setOnAction(
+                (final ActionEvent e) -> {
+                    configureFileChooser(fileChooser);
+                    File file = fileChooser.showOpenDialog(stage);
+                    if (file != null && !file.getAbsolutePath().isEmpty()) {
+                        args[0] = file.getAbsolutePath();
+                        database.exportToFile(args);
+                    }
+                }
+        );
     }
 
     /**
-     * Ask the user to user to enter the tennis players id and continue asking if the id is not valid
-     * Call the database to print the tennis matches of the player with the id.
-     * @param userInput The user input of the data
-     * @param database The TennisDatabase holding information of matches and players
+     * Method used to set the effects for the delete player button and the actions for when the button is pressed.
      */
-    private void printAllTennisMatchesOfAPlayer(Scanner userInput, TennisDatabase database) {
-        String playerId;
-        do {
-            System.out.print("Enter Tennis Players Id : ");
-            playerId = userInput.next();
-        } while (!isValidId(playerId));
-        database.printTennisMatchesOfPlayer(playerId);
-
+    private void setDeletePlayerButtonInfo() {
+        deletePlayerButton.setTextFill(black);
+        deletePlayerButton.setBlendMode(BlendMode.LIGHTEN);
+        deletePlayerButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    deletePlayerButton.setBlendMode(BlendMode.RED);
+                }
+        );
+        deletePlayerButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    deletePlayerButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        deletePlayerButton.setOnAction(
+                (ActionEvent e) -> {
+                    database.getBST().deleteKey(idToDelete.getText());
+                    database.getBST().getPlayersArray().clear();
+                    database.getBST().putInArrayList();
+                    database.getTmc().goOverMatches(database.getBST());
+                    idToDelete.clear();
+                    data2.setAll(database.getBST().getPlayersArray());
+                    table2.setItems(data2);
+                }
+        );
     }
 
     /**
-     * Call the database to print all the matches.
-     * @param database The TennisDatabase holding information of matches and players
+     * Method used to set the effects for the add player button and the actions for when the button is pressed.
      */
-    private void printAllTennisMatches(TennisDatabase database) {
-        database.printAllMatches();
+    private void setAddPlayerButtonInfo() {
+        addPlayerButton.setBlendMode(BlendMode.LIGHTEN);
+        addPlayerButton.setTextFill(black);
+        addPlayerButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    addPlayerButton.setBlendMode(green);
+                }
+        );
+        addPlayerButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    addPlayerButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        addPlayerButton.setOnAction(
+                (ActionEvent e) -> {
+                    TennisPlayer player = new TennisPlayer(addPlayerID.getText(),
+                            addFirstName.getText(), addLastName.getText(), parseInt(addYear.getText()), addCountry.getText());
+                    database.getBST().insertPlayer(new TennisPlayerNode(player));
+
+                    addPlayerID.clear();
+                    addFirstName.clear();
+                    addLastName.clear();
+                    addYear.clear();
+                    addCountry.clear();
+                    database.getBST().getPlayersArray().clear();
+                    database.getBST().putInArrayList();
+                    database.getTmc().goOverMatches(database.getBST());
+                    data2.setAll(database.getBST().getPlayersArray());
+                    table2.setItems(data2);
+                }
+        );
     }
 
     /**
-     * call the database to create a new player using the user player information
-     * catch an exception if the tennis player is already within the container
-     * output the information the user inputted for the player
-     * @param database The TennisDatabase holding information of matches and players
-     * @param player The player information inputted by the user
+     * Method used to set the effects for the add match button and the actions for when the button is pressed.
      */
-    private void insertNewPlayer(TennisDatabase database, TennisPlayer player) {
-
-        try {
-            database.userCreatePlayer(player);
-        } catch (TennisDatabaseRuntimeException ex) {
-            System.out.println("Tennis player is already within the container.");
-            player.print();
-        }
+    private void setAddMatchButtonInfo() {
+        addMatchButton.setBlendMode(BlendMode.LIGHTEN);
+        addMatchButton.setTextFill(black);
+        addMatchButton.setOnMouseEntered(
+                (MouseEvent e) -> {
+                    addMatchButton.setBlendMode(green);
+                }
+        );
+        addMatchButton.setOnMouseExited(
+                (MouseEvent e) -> {
+                    addMatchButton.setBlendMode(BlendMode.LIGHTEN);
+                }
+        );
+        addMatchButton.setOnAction(
+                (ActionEvent e) -> {
+                    try {
+                        database.getTmc().insertMatch(new TennisMatch(addFirstID.getText(), addSecondId.getText(),
+                                addTennisMatchDate.getText(), addMatchLocation.getText(),
+                                addMatchScore.getText(), database.getBST()));
+                    } catch (TennisDatabaseException ex) {
+                        Logger.getLogger(Assignment2.class.getName()).log(Level.WARNING,
+                                "Trouble inserting match", ex);
+                    }
+                    addFirstID.clear();
+                    addSecondId.clear();
+                    addTennisMatchDate.clear();
+                    addMatchLocation.clear();
+                    addMatchScore.clear();
+                    data.setAll(database.getTmc().getMatches());
+                    table.setItems(data);
+                });
     }
 
     /**
-     * Call the database to create a user using the information inputted for a match.
-     * @param database The TennisDatabase holding information of matches and players
-     * @param match The match holding the user inputted information of a player
+     * Method used to set display information for popup window when looking for a file.
+     * @param fileChooser file chooser
      */
-    private void insertNewMatch(TennisDatabase database, TennisMatch match) {
-        database.userCreateMatch(match);
+    private static void configureFileChooser(final FileChooser fileChooser) {
+        fileChooser.setTitle("Select File to Import or Export");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("All Images", "*.*"),
+                new FileChooser.ExtensionFilter("JPG", "*.jpg"),
+                new FileChooser.ExtensionFilter("PNG", "*.png"));
     }
-
-    /**
-     * Call the methods implemented to check if a player information is valid.
-     * @param player The player holding the user inputted information of a match
-     * @return Whether or not the player information is valid
-     */
-    private boolean isValidPlayer(String [] player) {
-        //JRC313,Jeffery,Ceja,2012,America
-        return isValidId(player[0]) && isValidFirstOrLastName(player[1]) && isValidFirstOrLastName(player[2])
-                && isValidYear(player[3]) && isValidCountry(player[4]);
-    }
-
-    /**
-     * Check to see if the inputted id is valid.
-     *
-     * if the id is empty or the length is not equal to 5 make it known that the id is not valid
-     * otherwise the id is valid
-     * @param id The id the user inputted
-     * @return Whether or not the id is valid
-     */
-    private boolean isValidId(String id) {
-        if(!id.isEmpty() && id.length() != 5) {
-            System.out.println("Id is not valid, " + id
-                    + " Id can be any arrangement of 5 characters and or digits but must be 5 in length.");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Check to see if the expected string is valid.
-     *
-     * if the inputted information is empty output that the information is not valid
-     *
-     * if the inputted information's length is less than or equal to 2 output that the input is not valid
-     *
-     * otherwise it is valid
-     *
-     * @param firstOrLastName The first or last name of the player
-     * @return Whether the first or last name is valid
-     */
-    private boolean isValidFirstOrLastName(String firstOrLastName) {
-        if(firstOrLastName.isEmpty()) {
-            System.out.println(firstOrLastName + " is not a valid input.");
-            return false;
-        } else if (firstOrLastName.length() <= 2) {
-            System.out.println(firstOrLastName + " is not a valid input, must contain more than 2 characters");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Check to see if the inputted year is valid
-     *
-     * if the year is not numeric or the year length is not for output the year must have 4 digits
-     *
-     * @param year The year
-     * @return Whether or not the year is valid
-     */
-    private boolean isValidYear(String year) {
-        //StringUtils.isNumeric(year);
-        if(!isNumeric(year) || year.length() != 4) {
-            System.out.println("Year must have 4 digits!");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Method implemented to check if a string is numeric
-     * @param str string to check numerical value
-     * @return whether the string is numeric or not
-     */
-    private boolean isNumeric(String str)
-    {
-        try
-        {
-            double valueToCheckNumeric = Double.parseDouble(str);
-        }
-        catch(NumberFormatException nfe)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Method to check if the country is valid.
-     *
-     * if the country is empty or has more than 20 characters it is not valid
-     *
-     * @param country The country to check
-     * @return Whether the country is valid or not
-     */
-    private boolean isValidCountry(String country) {
-        return !country.isEmpty() && country.length() <= 20;
-    }
-
-    /**
-     * Method to check if a match is valid or not.
-     *
-     * if the information of the match doesn't have valid id's, a date, a country, or a score it is not valid
-     *
-     * @param match The match information inputted by the user.
-     * @return Whether the match information is valid or not
-     */
-    private boolean isValidMatch(String [] match) {
-        return isValidId(match[0]) && isValidId(match[1]) && isValidDate(match[2]) && isValidCountry(match[3])
-                && isValidScore(match[4]);
-    }
-
-    /**
-     * Method to check if a date is valid or not.
-     *
-     * Check to see if the date is in simpledate format, if not date is not valid
-     * Check to see if length is appropriate, if not date is not valid
-     *
-     * Otherwise date is valid
-     * @param date The date to check validity
-     * @return Whether the date is valid or not
-     */
-    private boolean isValidDate(String date) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-            sdf.setLenient(false);
-            sdf.parse(date);
-        }
-        catch (Exception e) {
-            System.out.println("Date is not valid, " + date);
-            return false;
-        }
-        if (date.length() != 8) {
-            System.out.println("Date must be in YYYYMMDD format, " + date + " is not in this format.");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Method to check whether the score is valid or not.
-     *
-     * if the score is empty or the length is less than 3 it is not valid
-     *
-     * @param score The score to check validity
-     * @return Whether the score is valid or not
-     */
-    private boolean isValidScore(String score) {
-        return !score.isEmpty() && score.length() >= 3;
-    }
-
-
 }
