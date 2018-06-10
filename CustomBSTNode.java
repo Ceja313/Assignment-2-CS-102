@@ -1,5 +1,6 @@
 public class CustomBSTNode {
 
+    // Needed for program
     private String key;
     private TennisPlayerNode data;
     private TennisMatchesList list;
